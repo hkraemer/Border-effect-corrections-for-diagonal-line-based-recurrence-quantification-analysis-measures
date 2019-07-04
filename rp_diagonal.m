@@ -73,9 +73,6 @@ if issymmetric(X)
  
     % get line distributions
     [~, lines_1] = dl_h(X_cl); % black horizontal lines
-    
-    % remove lines < 2
-    lines_1(:,lines_1(1,:) < 2) = [];
         
     % make a copy of the line matrix
     lines_1_copy = lines_1;
