@@ -1,4 +1,4 @@
-function [a_out, b_out]=dl_censi(X)
+function [a_out, b_out]=dl_censi(varargin)
 % DL_CENSI   Mean of the diagonal line lengths and their distribution - 
 % Censi correction for border lines.
 %    A=dl_censi(X) computes the mean of the length of the diagonal 
@@ -6,9 +6,16 @@ function [a_out, b_out]=dl_censi(X)
 %    which has been proposed by Censi et al. 2004 and which accounts for
 %    border effects is implemented.
 %
-%    [A B]=dl_censi(X) computes the mean A and the lengths of the
-%    found diagonal lines, stored in B. In order to get the 
-%    histogramme of the line lengths, simply call 
+%    A=dl_censi(X,'semi') computes the mean of the length of the diagonal 
+%    line structures in a recurrence plot X using the mentionded correction. 
+%    Not only lines starting AND ending at a border of the RP, but also semi
+%    border lines - lines, that start OR end at a border of the RP - are 
+%    denoted as border lines. The longest of these count.
+%
+%    [A B]=dl_censi(X,'semi') computes the mean A and the lengths of the
+%    found diagonal lines of the recurrence plot X, stored in B, using the 
+%    correction mentioned above and also accounts for semi-border diagonals.
+%    In order to get the histogramme of the line lengths, simply call 
 %    HIST(B,[1 MAX(B)]).
 %
 %    Examples (CRP toolbox needs to be installed):
@@ -43,28 +50,42 @@ function [a_out, b_out]=dl_censi(X)
 % as published by the Free Software Foundation; either version 2
 % of the License, or any later version.
 
-
+X = varargin{1};
+styleLib={'normal','semi'}; % the possible borderline-style to look for
+try
+    type = varargin{2};
+    if ~isa(type,'char') || ~ismember(type,styleLib)
+        warning(['Specified RP type should be one of the following possible values:',...
+           10,sprintf('''%s'' ',styleLib{:})])
+    end
+catch
+    type = 'normal';
+end
 
 [Y,~] = size(X);
 if issymmetric(X)
-    [lines(1),borderlines(1)] = getLinesOnDiag(X,-Y+1); % init with first (scalar) diagonal
+    [lines(1),borderlines(1)] = getLinesOnDiag(X,-Y+1,type); % init with first (scalar) diagonal
     for j=-Y+2:-1
-        [ll,bl] = getLinesOnDiag(X,j);
+        [ll,bl] = getLinesOnDiag(X,j,type);
         lines = horzcat(lines,ll);
         borderlines = horzcat(borderlines,bl);
     end
     % append lines for second triangle and LOI   
     lines = horzcat(lines,lines,Y);
     borderlines = horzcat(borderlines,borderlines);
+    % set all borderlines to the longest one 
+    borderlines(:)=max(borderlines);
     % append borderlines (but exclude LOI)
     lines = horzcat(lines,borderlines);
 else
-    [lines(1),borderlines(1)] = getLinesOnDiag(X,-Y+1); % init with first (scalar) diagonal
+    [lines(1),borderlines(1)] = getLinesOnDiag(X,-Y+1,type); % init with first (scalar) diagonal
     for j=-Y+2:Y-1
-        [ll,bl] = getLinesOnDiag(X,j);
+        [ll,bl] = getLinesOnDiag(X,j,type);
         lines = horzcat(lines,ll);
         borderlines = horzcat(borderlines,bl);
     end
+    % set all borderlines to the longest one 
+    borderlines(:)=max(borderlines);
     % add borderlines to lines
     lines = horzcat(lines,borderlines);
 end
@@ -77,9 +98,8 @@ b_out= sort(lines,'descend')';
 a_out = mean(b_out);
 end
 
-function [lines, borderline] = getLinesOnDiag(M,j)
+function [lines, borderline] = getLinesOnDiag(M,j,type)
     d = diag(M,j);
-    [Y,~] = size(M);
     border_line_length = length(d);
     if ~any(d)
         lines = 0;
@@ -90,14 +110,24 @@ function [lines, borderline] = getLinesOnDiag(M,j)
     ends = find(diff([d; 0],1)==-1);
 
     lines = zeros(1,numel(starts));
-    borderline = 0;
+    borderline = zeros(1,numel(starts));
     
-    for n=1:numel(starts)
-        if ends(n) - starts(n) + 1 < border_line_length
-            lines(n) = ends(n) - starts(n) +1;
-        elseif ends(n) - starts(n) + 1 == border_line_length
-            borderline = Y;
+    if strcmp(type,'normal')
+        for n=1:numel(starts)
+            if ends(n) - starts(n) + 1 < border_line_length
+                lines(n) = ends(n) - starts(n) +1;
+            elseif ends(n) - starts(n) + 1 == border_line_length
+                borderline = ends(n) - starts(n) +1;
+            end
         end
+    elseif strcmp(type,'semi')
+        for n=1:numel(starts)
+            if ends(n) ~= border_line_length && starts(n) ~=1               
+                lines(n) = ends(n) - starts(n) +1;
+            else
+                borderline(n) = ends(n) - starts(n) +1;
+            end
+        end    
     end
     
 end
