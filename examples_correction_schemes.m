@@ -6,9 +6,9 @@
 % 1)    we generate the synthetic data
 % 2)    we compute the RP's and the according line length histograms with
 %       and without applying the correction schemes for border effects.
-% 3)    we apply correction schemes for tangential motion on the RP's and,
-%       again, look at the resulting diagonal line length histograms with
-%       and without applying the correction schemes for border effects.
+% 3)    we apply correction schemes for tangential motion on the RP's and
+%       look at the resulting diagonal line length entropy with and without
+%       applying the correction schemes for border effects.
 
 
 clear, clc, close all
@@ -35,6 +35,15 @@ thres_sel_1 = 'fix';
 thres_sel_2 = 'var';
 e2 = 0.04;
 
+% select noise level (times the mean std of the multivariate signal)
+sigma = 0; % 0% of the mean std of the signal, i.e. no noise contamination
+% sigma = 0.1; % 10% of the mean std of the signal
+% sigma = 0.3; % 30% of the mean std of the signal
+
+% Choose minimal line length for computation of the entropy in Sect. 3.2)
+% This is important, if you have chosen a non-zero noiselevel
+l_min = 2;
+
 % select the norm
 norm = 'euc';
 % norm = 'max';
@@ -50,12 +59,6 @@ norm = 'euc';
 % type = 'normal';
 type = 'semi';
 
-
-% select noise level (times the mean std of the multivariate signal)
-sigma = 0; % 0% of the mean std of the signal, i.e. no noise contamination
-% sigma = 0.1; % 10% of the mean std of the signal
-% sigma = 0.3; % 30% of the mean std of the signal
-
 % select the number of data points, which will be removed due to transient
 % behavior
 transients = 2500;
@@ -66,14 +69,17 @@ t = zeros(2,N); % time vectors for for regular and chaotic flow data
 Y1 = cell(1,2); % phase space vectors for regular and chaotic map data
 Y2 = cell(1,2); % phase space vectors for regular and chaotic flow data
 
-RP1 = cell(1,2); % recurrence plots for regular and chaotic map data
-RP2 = cell(1,2); % recurrence plots for regular and chaotic flow data
+RP1 = cell(6,2); % recurrence plots for regular and chaotic map data
+RP2 = cell(6,2); % recurrence plots for regular and chaotic flow data
 
 hl1 = cell(5,2); % all diagonal lines for regular and chaotic map data
 hl2 = cell(5,2); % all diagonal lines for regular and chaotic flow data
 
 pl1 = cell(5,2); % histogram of diagonal lines for regular and chaotic map data
 pl2 = cell(5,2); % histogram of diagonal lines for regular and chaotic flow data
+
+ent_Sum1 = cell(2,6); % entropies for regular and chaotic map data
+ent_Sum2 = cell(2,6); % entropies for regular and chaotic flow data
 
 
 %% 1) generate synthetic data
@@ -206,14 +212,14 @@ grid on
 % loop over the two different regimes
 for i = 1:2
     
-    % compute RPs for the Logistic map
-    [RP1{i},~,~] = rp(Y1{i},e1(i),thres_sel_1,norm); 
+    % compute normal RPs for the Logistic map
+    [RP1{1,i},~,~] = rp(Y1{i},e1(i),thres_sel_1,norm); 
     
-    % compute RPs for the Roessler system
-    [RP2{i},~,~] = rp(Y2{i},e2,thres_sel_2,norm);     
+    % compute normal RPs for the Roessler system
+    [RP2{1,i},~,epsilon] = rp(Y2{i},e2,thres_sel_2,norm);     
     
-    X1=RP1{i};
-    X2=RP2{i};
+    X1=RP1{1,i};
+    X2=RP2{1,i};
     
     % get line distributions    
     [~, hl1{1,i}] = dl_conventional(X1); % black diagonal lines conventional
@@ -238,8 +244,8 @@ for i = 1:2
     % a proper histogram
     for l = 1:5       
         % make proper histogram
-        pl1{l,i} = hist(hl1{l,i},1:size(RP1{i},1)); 
-        pl2{l,i} = hist(hl2{l,i},1:size(RP2{i},1)); 
+        pl1{l,i} = hist(hl1{l,i},1:size(RP1{1,i},1)); 
+        pl2{l,i} = hist(hl2{l,i},1:size(RP2{1,i},1)); 
     end
     
     
@@ -252,7 +258,7 @@ for i = 1:2
         'Position',[.1 .1 .9 .8])
 
     subplot(2,3,1)
-    imagesc(RP1{i}(400:600,400:600)), colormap([1 1 1; 0 0 0]), axis xy square
+    imagesc(RP1{1,i}(400:600,400:600)), colormap([1 1 1; 0 0 0]), axis xy square
     if i == 1
         title('RP of Logistic map (regular)')
     else
@@ -261,7 +267,7 @@ for i = 1:2
     
     for l = 1:5
         subplot(2,3,l+1)
-        h = bar(1:size(RP1{i},1),pl1{l,i});
+        h = bar(1:size(RP1{1,i},1),pl1{l,i});
         col = get(h,'facecolor'); % color of the bar plot
         set(h,'edgecolor',col,'linewidth',1) % use the color also for surrounding line
         axis square
@@ -286,7 +292,7 @@ for i = 1:2
         'Position',[.1 .1 .9 .8])
 
     subplot(2,3,1)
-    imagesc(t(i,:),t(i,:),RP2{i}), colormap([1 1 1; 0 0 0]), axis xy square
+    imagesc(t(i,:),t(i,:),RP2{1,i}), colormap([1 1 1; 0 0 0]), axis xy square
     if i == 1
         title('RP of Roessler system (regular)')
     else
@@ -295,7 +301,7 @@ for i = 1:2
     
     for l = 1:5
         subplot(2,3,l+1)
-        h = bar(1:size(RP2{i},1),pl2{l,i});
+        h = bar(1:size(RP2{1,i},1),pl2{l,i});
         col = get(h,'facecolor'); % color of the bar plot
         set(h,'edgecolor',col,'linewidth',1) % use the color also for surrounding line
         axis square
@@ -324,31 +330,199 @@ end
 
 % set parameters for correction schemes
 
-% perpendicular angle threshold
+% perpendicular RP: angle threshold
 w = 0.258;
 
-tau_iso = ;
+% isodirectional RP: translation parameter T
+T = 8;
+% isodirectional RP: choice of second recurrence threshold. Give this as a
+% percentage of the first recurrence threshold, i.e. if set to 0.8, the
+% second threshold will be e2 = 0.8 * e1
+iso_threshold_factor = 0.8;
+
+% TRP threshold
+TRP_threshold = 8;
+
+% LM2P RP threshold
+LM2P_threshold = 8;
+
+%% 3.1) Compute and display RPs from the tangential motion correction schemes
 
 % loop over the two different regimes
 for i = 1:2
     
-   % apply correction schemes for tangential motion
+    % apply correction schemes for tangential motion
    
-   % Logitic map data
-   RP1_perp{i} = rp_perp(Y1{i},e1(i),thres_sel_1,w);
-   RP1_iso{i} = rp_iso(Y1{i},e1(i),E2,thres_sel_1,tau_iso);
- 
-   
-   % Roessler system data
+    % Logistic map data
+    RP1{2,i} = rp_perp(Y1{i},e1(i),thres_sel_1,w,norm);
+    RP1{3,i} = rp_iso(Y1{i},e1(i),e1(i)*iso_threshold_factor,thres_sel_1,T,norm);
+    RP1{4,i} = rp_TRP(Y1{i},e1(i),thres_sel_1,TRP_threshold,norm); 
+    RP1{5,i} = rp_LM2P(Y1{i},e1(i),thres_sel_1,LM2P_threshold,norm);
+    RP1{6,i} = rp_diagonal(RP1_normal{i});
     
+    % Roessler system data
+    RP2{2,i} = rp_perp(Y2{i},e2,thres_sel_2,w,norm);
+    RP2{3,i} = rp_iso(Y2{i},e2,epsilon*iso_threshold_factor,thres_sel_2,T,norm);
+    RP2{4,i} = rp_TRP(Y2{i},e2,thres_sel_2,TRP_threshold,norm); 
+    RP2{5,i} = rp_LM2P(Y2{i},e2,thres_sel_2,LM2P_threshold,norm);
+    RP2{6,i} = rp_diagonal(RP2_normal{i});
+   
+   
+    % plot results 
+    
+    methods = {'normal','perpendicular','isodirectional','True','LM2P',...
+        'diagonal'};
+    
+    % Logistic map
+    
+    figure('Units','normalized',...
+         'Position',[.1 .1 .9 .8])
+    % loop over the correction schemes
+    for j = 1:6
+        
+        subplot(2,3,j)
+        imagesc(RP1{j,i}), colormap([1 1 1; 0 0 0]), axis xy square
+        if i == 1
+            titlestring = strcat(methods{j},'{ }','RP (Logistic map regular)');
+            title(titlestring)
+        else
+            titlestring = strcat(methods{j},'{ }','RP (Logistic map chaotic)');
+            title(titlestring)
+        end
+        xlabel('datapoint index')
+        ylabel('datapoint index')
+        set(gca,'LineWidth',2)
+        set(gca,'FontSize',14)     
+    end
+    
+    % Roessler system
+    
+    figure('Units','normalized',...
+         'Position',[.1 .1 .9 .8])
+    % loop over the correction schemes
+    for j = 1:6
+        
+        subplot(2,3,j)
+        imagesc(RP2{j,i}), colormap([1 1 1; 0 0 0]), axis xy square
+        if i == 1
+            titlestring = strcat(methods{j},'{ }','RP (Roessler system regular)');
+            title(titlestring)
+        else
+            titlestring = strcat(methods{j},'{ }','RP (Roessler system chaotic)');
+            title(titlestring)
+        end
+        xlabel('datapoint index')
+        ylabel('datapoint index')
+        set(gca,'LineWidth',2)
+        set(gca,'FontSize',14)     
+    end
+      
 end
     
+
+%% 3.2) Compute and display entropy from the tangential motion correction schemes
+    
+% loop over the two different regimes
+for i = 1:2
+    
+    % loop over the different tangential motion correction schemes
+    
+    for j = 1:6
+        
+        X1 = RP1{j,i};
+        X2 = RP2{j,i};
+        
+        % get line distributions    
+        [~, hl1{1,i}] = dl_conventional(X1); % black diagonal lines conventional
+        [~, hl2{1,i}] = dl_conventional(X2); 
+
+        [~, hl1{2,i}] = dl_dibo(X1,type); % dibo correction
+        [~, hl2{2,i}] = dl_dibo(X2,type); 
+
+        [~, hl1{3,i}] = dl_censi(X1,type); % Censi correction 
+        [~, hl2{3,i}] = dl_censi(X2,type);
+
+        [~, hl1{4,i}] = dl_kelo(X1,type); % kelo correction
+        [~, hl2{4,i}] = dl_kelo(X2,type); 
+
+        [~, hll] = dl_windowmasking(X1); % window masking
+        hl1{5,i} = hll(1,:)';
+        [~, hll2] = dl_windowmasking(X2); % window masking
+        hl2{5,i} = hll2(1,:)';
+        
+        % loop over the different border effect correction approaches and make
+        % a proper histogram
+        for l = 1:5       
+            % make proper histogram
+            pl1{l,i} = hist(hl1{l,i},1:size(RP1{1,i},1)); 
+            pl2{l,i} = hist(hl2{l,i},1:size(RP2{1,i},1)); 
+            
+            % adjust histograms to chosen minimal line length
+            pl1{l,i} = pl1{l,i}(lmin:end);
+            pl2{l,i} = pl2{l,i}(lmin:end);
+            
+            % compute diagonal line length entropy
+
+            % get probability distribution from histogram
+            l_prob1 = pl1{l,i}/sum(pl1{l,i});
+            l_prob2 = pl2{l,i}/sum(pl2{l,i});
+
+            ent_Sum1{i,j}(l) = l_prob1 .* log(l_prob1)/log(length(pl1{l,i}));
+            ent_Sum2{i,j}(l) = l_prob1 .* log(l_prob1)/log(length(pl2{l,i}));
+        end
+        
+    end  
+    
+    % Plot entropies
+    
+    figure('Units','normalized',...
+         'Position',[.1 .1 .9 .8])
+    % loop over the correction schemes
+    for j = 1:6
+        
+        subplot(2,3,j)       
+        bar(1:5,ent_Sum1{i,j}(:))
+        set(gca,'xticklabel',{titlestr{1},titlestr{2},titlestr{3},...
+            titlestr{4},titlestr{5}})
+        set(gca,'LineWidth',2)
+        set(gca,'FontSize',14) 
+        ylabel('normalized entropy')
+        
+        if i == 1
+            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Logistic map regular)');
+            title(titlestr)
+        else
+            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Logistic map chaotic)');
+            title(titlestr)
+        end
+
+    end
+    
+    figure('Units','normalized',...
+         'Position',[.1 .1 .9 .8])
+    % loop over the correction schemes
+    for j = 1:6
+        
+        subplot(2,3,j)       
+        bar(1:5,ent_Sum2{i,j}(:))
+        set(gca,'xticklabel',{titlestr{1},titlestr{2},titlestr{3},...
+            titlestr{4},titlestr{5}})
+        set(gca,'LineWidth',2)
+        set(gca,'FontSize',14) 
+        ylabel('normalized entropy')
+        
+        if i == 1
+            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Roessler system regular)');
+            title(titlestr)
+        else
+            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Roessler system chaotic)');
+            title(titlestr)
+        end
+
+    end
     
     
-
-
-
-
+end
 
     
 

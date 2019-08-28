@@ -4,7 +4,7 @@ function [y,P,epsilon] = rp_TRP(varargin)
 % Minimum input-arguments : 1
 % Maximum input-arguments : 6
 %
-%    [R,DM,epsilon] = rp_TRP(Y,E,thres_meth,norm,rt_thres,algorithm) 
+%    [R,DM,epsilon] = rp_TRP(Y,E,thres_meth,rt_thres,norm,algorithm) 
 %    
 %    Calculates a recurrence plot 'R' from an phase space vector 'Y', using 
 %    the threshold 'E'. 'DM' is an optional output and is the adjacency- or
@@ -99,26 +99,25 @@ catch
     algorithm = 'vector';
 end
 
-
-try
-    rt_thres = varargin{5};
-    if rem(rt_thres,1)~=0 || rt_thres < 1 || rt_thres >= N(1)
-        warning('recurrence time threshold needs to be a positive integer with maximum size of the RP. Now set to rt_thres = 1')
-        rt_thres = 1;
-    end
-catch
-    rt_thres = 1;
-end
-
 methLib={'euc','max'}; % the possible norms
 try
-    meth = varargin{4};
+    meth = varargin{5};
     if ~isa(meth,'char') || ~ismember(meth,methLib)
        warning(['Specified norm should be one of the following possible values:',...
            10,sprintf('''%s'' ',methLib{:})])
     end
 catch
     meth = 'max';
+end
+
+try
+    rt_thres = varargin{4};
+    if rem(rt_thres,1)~=0 || rt_thres < 1 || rt_thres >= N(1)
+        warning('recurrence time threshold needs to be a positive integer with maximum size of the RP. Now set to rt_thres = 1')
+        rt_thres = 1;
+    end
+catch
+    rt_thres = 1;
 end
 
 thresLib={'fix','var','fan'}; % the possible ways of threshold computation
