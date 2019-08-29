@@ -73,6 +73,9 @@ if issymmetric(X)
     % append lines for second triangle and LOI   
     lines = horzcat(lines,lines,Y);
     borderlines = horzcat(borderlines,borderlines);
+    % remove lines of length zero (=no line)
+    zero_lines = borderlines(:)==0;
+    borderlines(zero_lines) = [];
     % set all borderlines to the LOI
     borderlines(:)=Y;
     % append borderlines (but exclude LOI)
@@ -83,7 +86,10 @@ else
         [ll,bl] = getLinesOnDiag(X,j,type);
         lines = horzcat(lines,ll);
         borderlines = horzcat(borderlines,bl);
-    end
+    end    
+    % remove lines of length zero (=no line)
+    zero_lines = borderlines(:)==0;
+    borderlines(zero_lines) = [];
     % set all borderlines to the longest one 
     borderlines(:)=Y;
     % add borderlines to lines

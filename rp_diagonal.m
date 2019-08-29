@@ -514,7 +514,7 @@ end
 zero_lines = liness(1,:)==0;
 liness(:,zero_lines) = []; 
 
-b_out= sortrows(liness','descend')';
+b_out= flipud(sortrows(liness',1))';
 a_out = mean(b_out(1,:));
 end
 
