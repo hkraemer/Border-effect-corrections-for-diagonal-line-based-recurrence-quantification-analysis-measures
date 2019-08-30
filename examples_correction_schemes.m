@@ -29,11 +29,11 @@ thres_sel_1 = 'fix';
 
 % For the flow data example:
 
-% Here we apply a fixed recurrence threshold corresponding to 4% global 
-% recurrence rate (we take the 4th percentile of all pairwise distances,
+% Here we apply a fixed recurrence threshold corresponding to 15% global 
+% recurrence rate (we take the 15th percentile of all pairwise distances,
 % cf. Kraemer et al., Chaos 28, 085720 (2018))
 thres_sel_2 = 'var';
-e2 = 0.04;
+e2 = 0.15;
 
 % select noise level (times the mean std of the multivariate signal)
 sigma = 0; % 0% of the mean std of the signal, i.e. no noise contamination
@@ -334,17 +334,26 @@ end
 w = 0.258;
 
 % isodirectional RP: translation parameter T
-T = 8;
+% (corresponds roughly to the first minimum of the auto mutual information
+% for the chaotic and regular Roessler setup as well as for the chaotic 
+% Logistic map setup)
+T = 7;
 % isodirectional RP: choice of second recurrence threshold. Give this as a
 % percentage of the first recurrence threshold, i.e. if set to 0.8, the
 % second threshold will be e2 = 0.8 * e1
 iso_threshold_factor = 0.8;
 
 % TRP threshold
-TRP_threshold = 8;
+% (corresponds roughly to the first minimum of the auto mutual information
+% for the chaotic and regular Roessler setup as well as for the chaotic 
+% Logistic map setup)
+TRP_threshold = 7;
 
 % LM2P RP threshold
-LM2P_threshold = 8;
+% (corresponds roughly to the first minimum of the auto mutual information
+% for the chaotic and regular Roessler setup as well as for the chaotic 
+% Logistic map setup)
+LM2P_threshold = 7;
 
 %% 3.1) Compute and display RPs from the tangential motion correction schemes
 
@@ -354,18 +363,18 @@ for i = 1:2
     % apply correction schemes for tangential motion
    
     % Logistic map data
-    RP1{2,i} = rp_perp(Y1{i},e1(i),thres_sel_1,w,norm);
-    RP1{3,i} = rp_iso(Y1{i},e1(i),e1(i)*iso_threshold_factor,thres_sel_1,T,norm);
+    RP1{2,i} = rp_perp(Y1{i},e1(i),thres_sel_1,w,2,norm);
+    RP1{3,i} = rp_iso(Y1{i},e1(i),(e1(i)*iso_threshold_factor),thres_sel_1,T,norm);
     RP1{4,i} = rp_TRP(Y1{i},e1(i),thres_sel_1,TRP_threshold,norm); 
     RP1{5,i} = rp_LM2P(Y1{i},e1(i),thres_sel_1,LM2P_threshold,norm);
-    RP1{6,i} = rp_diagonal(RP1_normal{i});
+    RP1{6,i} = rp_diagonal(RP1{1,i});
     
     % Roessler system data
-    RP2{2,i} = rp_perp(Y2{i},e2,thres_sel_2,w,norm);
-    RP2{3,i} = rp_iso(Y2{i},e2,epsilon*iso_threshold_factor,thres_sel_2,T,norm);
+    RP2{2,i} = rp_perp(Y2{i},e2,thres_sel_2,w,2,norm);
+    RP2{3,i} = rp_iso(Y2{i},e2,(epsilon*iso_threshold_factor),thres_sel_2,T,norm);
     RP2{4,i} = rp_TRP(Y2{i},e2,thres_sel_2,TRP_threshold,norm); 
     RP2{5,i} = rp_LM2P(Y2{i},e2,thres_sel_2,LM2P_threshold,norm);
-    RP2{6,i} = rp_diagonal(RP2_normal{i});
+    RP2{6,i} = rp_diagonal(RP2{1,i});
    
    
     % plot results 
@@ -454,12 +463,12 @@ for i = 1:2
         % a proper histogram
         for l = 1:5       
             % make proper histogram
-            pl1{l,i} = hist(hl1{l,i},1:size(RP1{1,i},1)); 
-            pl2{l,i} = hist(hl2{l,i},1:size(RP2{1,i},1)); 
+            pl1{l,i} = hist(hl1{l,i},1:size(RP1{j,i},1)); 
+            pl2{l,i} = hist(hl2{l,i},1:size(RP2{j,i},1)); 
             
             % adjust histograms to chosen minimal line length
-            pl1{l,i} = pl1{l,i}(lmin:end);
-            pl2{l,i} = pl2{l,i}(lmin:end);
+            pl1{l,i} = pl1{l,i}(l_min:end);
+            pl2{l,i} = pl2{l,i}(l_min:end);
             
             % compute diagonal line length entropy
 
@@ -467,8 +476,8 @@ for i = 1:2
             l_prob1 = pl1{l,i}/sum(pl1{l,i});
             l_prob2 = pl2{l,i}/sum(pl2{l,i});
 
-            ent_Sum1{i,j}(l) = l_prob1 .* log(l_prob1)/log(length(pl1{l,i}));
-            ent_Sum2{i,j}(l) = l_prob1 .* log(l_prob1)/log(length(pl2{l,i}));
+            ent_Sum1{i,j}(l) = nansum(-l_prob1 .* log(l_prob1))/log(length(pl1{l,i}));
+            ent_Sum2{i,j}(l) = nansum(-l_prob2 .* log(l_prob2))/log(length(pl2{l,i}));
         end
         
     end  
@@ -484,16 +493,19 @@ for i = 1:2
         bar(1:5,ent_Sum1{i,j}(:))
         set(gca,'xticklabel',{titlestr{1},titlestr{2},titlestr{3},...
             titlestr{4},titlestr{5}})
+        xtickangle(45)
         set(gca,'LineWidth',2)
         set(gca,'FontSize',14) 
         ylabel('normalized entropy')
+        ylim([0 1])
+        grid on
         
         if i == 1
-            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Logistic map regular)');
-            title(titlestr)
+            titlestring2 = strcat('{        }',methods{j},'{ }','RP \newline (Logistic map regular)');
+            title(titlestring2)
         else
-            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Logistic map chaotic)');
-            title(titlestr)
+            titlestring2 = strcat('{        }',methods{j},'{ }','RP \newline (Logistic map chaotic)');
+            title(titlestring2)
         end
 
     end
@@ -507,16 +519,19 @@ for i = 1:2
         bar(1:5,ent_Sum2{i,j}(:))
         set(gca,'xticklabel',{titlestr{1},titlestr{2},titlestr{3},...
             titlestr{4},titlestr{5}})
+        xtickangle(45)
         set(gca,'LineWidth',2)
         set(gca,'FontSize',14) 
         ylabel('normalized entropy')
+        ylim([0 1])
+        grid on
         
         if i == 1
-            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Roessler system regular)');
-            title(titlestr)
+            titlestring3 = strcat('{        }',methods{j},'{ }','RP \newline (Roessler system regular)');
+            title(titlestring3)
         else
-            titlestr = strcat('Entropy of ',methods{j},'{ }','RP (Roessler system chaotic)');
-            title(titlestr)
+            titlestring3 = strcat('{        }',methods{j},'{ }','RP \newline (Roessler system chaotic)');
+            title(titlestring3)
         end
 
     end
