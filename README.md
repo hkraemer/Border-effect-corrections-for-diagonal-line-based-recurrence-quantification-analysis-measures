@@ -10,11 +10,12 @@ effect corrections for diagonal line based recurrence quantification analysis me
 
 See the respective docstrings for further information.
 
-To get an idea of the functionality of the correction approaches you might just run the 
-script 'examples_correction_schemes.m', where we exemplary show the application of the
-mentioned methods to map and flow data. For a better understanding you should run the 
-different sections in the script individually. Play around with the parameters and noise
-level of the data! 
+To get an idea of the functionality of the correction approaches you might just run the
+MATLAB-Live script 'examples_correction_schemes.mlx' (or the plain code found in script 
+'examples_correction_schemes.m'), where we exemplary show the application of the
+mentioned methods to map and flow data, similar to the data used in the paper. For a 
+better understanding you should run the different sections in the script individually. 
+Play around with the parameters and noise level of the data! 
 
 In order to properly run the provided code you might need to install the CRP toolbox by
 Norbert Marwan (open source; http://tocsy.pik-potsdam.de/CRPtoolbox/) and the Signal
