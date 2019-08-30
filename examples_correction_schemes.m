@@ -1,69 +1,76 @@
 %% Applying correction schemes for border effects and tangential motion
-
-% Here we exemplary show the funcionality of the different approaches in 
-% this toolbox. 
-
-% 1)    we generate the synthetic data
-% 2)    we compute the RP's and the according line length histograms with
-%       and without applying the correction schemes for border effects.
-% 3)    we apply correction schemes for tangential motion on the RP's and
-%       look at the resulting diagonal line length entropy with and without
-%       applying the correction schemes for border effects.
-
-
-clear, clc, close all
-
+% Here we show the functionality of the different approaches contained in this 
+% tool box by applying them to two paradigmic model systems, similar to the procedure 
+% in the paper. 
+% 
+% We will generate synthetic data derived from the well known <https://en.wikipedia.org/wiki/Logistic_map 
+% Logistic map>
+% 
+% $$x_{n+1} = rx_{n}(1-x_{n})$$
+% 
+% and from the <https://en.wikipedia.org/wiki/Rössler_attractor Roessler system>
+% 
+% $$\dot{x} = -y -z \\\dot{y} = x + ay \\\dot{z} = b + (x-c)z$$
+% 
+% For both systems we consider two choices of the control parameters, in order 
+% to obtain regular limit cycle behavior as well as chaotic motion. 
+% 
+% 
+clear, clc
 %% 0) Parameter setting and preallocation
+% Set length of the time series output and the number of data points, which 
+% will be removed due to transient behavior.
 
-% set length of the time series output
 N = 2000; 
+transients = 2500;
+%% 
+% Select the threshold selection method and the recurrence threshold $\epsilon$:
+% 
+% For the map data we apply a fixed recurrence threshold as $\frac{1}{10}$ of 
+% the range of the underlying time series (this will be done in Section 1.1, where 
+% the data will be generated).
 
-% select the threshold selection method and threshold:
-
-% For the map data exampel:
-
-% Here we apply a fixed recurrece threshold as 1/10 of the range of the
-% underlying signal (this is done in section 1), where the map data will be
-% generated)
 thres_sel_1 = 'fix';
+%% 
+% For the flow data we apply a fixed recurrence threshold corresponding to a 
+% global recurrence rate of 15% (we take the 15th percentile of all pairwise distances, 
+% cf. <https://aip.scitation.org/doi/abs/10.1063/1.5024914 Kraemer et al., Chaos 
+% 28, 085720 (2018)>)
 
-% For the flow data example:
-
-% Here we apply a fixed recurrence threshold corresponding to 15% global 
-% recurrence rate (we take the 15th percentile of all pairwise distances,
-% cf. Kraemer et al., Chaos 28, 085720 (2018))
 thres_sel_2 = 'var';
 e2 = 0.15;
+%% 
+% To mimic a more realistic case, we can also add white noise to the data. Select 
+% the noise level (times the mean standard deviation of the multivariate signal)
 
-% select noise level (times the mean std of the multivariate signal)
 sigma = 0; % 0% of the mean std of the signal, i.e. no noise contamination
 % sigma = 0.1; % 10% of the mean std of the signal
 % sigma = 0.3; % 30% of the mean std of the signal
+%% 
+% Choose the minimal line length (i.e. the number of diagonally adjacent recurrence 
+% points in the recurrence plot (RP), which are considered as a diagonal line). 
+% This parameter is crucial for obtaining meaningful results for the diagonal 
+% line length entropy in the presence of noise, i.e. if you have chosen $\sigma 
+% \neq 0$ in lines 7-8 (Section 3.2 in this live script)
 
-% Choose minimal line length for computation of the entropy in Sect. 3.2)
-% This is important, if you have chosen a non-zero noiselevel
 l_min = 2;
+%% 
+% Select the metric for distance computations and choose from Euclidean or maximum 
+% norm.
 
-% select the norm
 norm = 'euc';
 % norm = 'max';
-
-
-% select type of border diagonal counting 
-
-%'normal': lines, which start AND end at a RP boundary are denoted as
-%          border diagonals
-%'semi':   lines, which start OR end at a RP boundary are also denoted as
-%          border diagonals
+%% 
+% The proposed correction schemes for border effects can correct for border 
+% diagonals (diagonal lines getting cut from both sides by the edges of the RP) 
+% or also take semi-border diagonals into account (diagonal lines getting cut 
+% from both OR just from one side by the edge of the RP).
 
 % type = 'normal';
 type = 'semi';
+%% 
+% Preallocate storing vectors/matrices:
 
-% select the number of data points, which will be removed due to transient
-% behavior
-transients = 2500;
-
-% preallocate storing matrices for
 t = zeros(2,N); % time vectors for for regular and chaotic flow data
 
 Y1 = cell(1,2); % phase space vectors for regular and chaotic map data
@@ -80,24 +87,19 @@ pl2 = cell(5,2); % histogram of diagonal lines for regular and chaotic flow data
 
 ent_Sum1 = cell(2,6); % entropies for regular and chaotic map data
 ent_Sum2 = cell(2,6); % entropies for regular and chaotic flow data
+%% 1) Generate synthetic data
+% Set random number generator (for reproducibility)
 
-
-%% 1) generate synthetic data
-
-% set random number generator (for reproducibility)
 rng(1)
-
-
-%% 1.1) Map data 
-% Logistic map in two parameter settings, leading to regular and chaotic 
-% motion
+%% 1.1) Map data
+% Logistic map in two parameter settings, leading to regular and chaotic motion
 
 % set parameters
 a(1) = 3.5;
 a(2) = 3.8;
 
-
-x0 = rand; % set initial condition
+% set random initial condition
+x0 = rand; 
 xx(1,:) = ones(1,N+transients) * x0; % preallocate storing vector for regular motion
 xx(2,:) = ones(1,N+transients) * x0; % preallocate storing vector for chaotic motion
 
@@ -112,9 +114,8 @@ x(2,:) = xx(2,transients+1:end);
 % set recurrence thresholds as 10% of the range of the time series
 e1(1) = range(x(1,:))/10;
 e1(2) = range(x(2,:))/10;
-
-
-% embed time series
+%% 
+% Embed time series in two dimensions, using a time delay $\tau = 2$
 
 % embedding dimension
 m = 2;
@@ -128,8 +129,8 @@ Y1{2}= embed(x(2,:),m,tau);
 % additive white noise
 Y1{1} = Y1{1} + sigma*mean(std(Y1{1}))*randn(size(Y1{1}));
 Y1{2} = Y1{2} + sigma*mean(std(Y1{2}))*randn(size(Y1{2}));
-
-% Plot Phase Space
+%% 
+% Plot Phase Space for the Logistic map examples
 
 % Plot sampled Phase Space
 figure('Units','normalized',...
@@ -154,11 +155,9 @@ title('Logistic map (chaotic)')
 set(gca,'Linewidth',2)
 set(gca,'Fontsize',14)
 grid on
-
-
-%% 1.2) Flow data 
+%% 1.2) Flow data
 % Roessler system in two parameter settings, leading to regular and chaotic 
-% motion
+% motion (we've chosen a sampling time of $\Delta t = 0.2$, but you can vary this)
 
 % initial condition
 x0 = [2*rand();2*rand();2*rand()];
@@ -169,9 +168,12 @@ b(1) = 10; % parameter leading to regular motion
 b(2) = 0.2; % parameter leading to chaotic motion
 c = 10;
 
+% select the sampling time
+delta_t = 0.2;
+
 % integrate Roessler system with given parameters
-[t(1,:),Y2{1}] = Rossler(a,b(1),c,x0,N,transients);
-[t(2,:),Y2{2}] = Rossler(a,b(2),c,x0,N,transients);
+[t(1,:),Y2{1}] = Rossler(a,b(1),c,x0,N,transients,delta_t);
+[t(2,:),Y2{2}] = Rossler(a,b(2),c,x0,N,transients,delta_t);
 
 Y2{1} = Y2{1}';
 Y2{2} = Y2{2}';
@@ -179,8 +181,8 @@ Y2{2} = Y2{2}';
 Y2{1} = Y2{1} + sigma*mean(std(Y2{1}))*randn(size(Y2{1}));
 Y2{2} = Y2{2} + sigma*mean(std(Y2{2}))*randn(size(Y2{2}));
     
-
-% Plot Phase Space
+%% 
+% Plot Phase Space for the Roessler system examples
 
 % Plot sampled Phase Space
 figure('Units','normalized',...
@@ -205,13 +207,13 @@ title('numerically integrated Roessler Attractor (chaotic)')
 set(gca,'Linewidth',2)
 set(gca,'Fontsize',14)
 grid on
+%% 2) Compute RPs and diagonal line length histograms of border correction schemes
+% Now we compute conventional RPs of the data generated in the preceding section. 
+% On these RPs we apply the discussed border correction schemes and eventually 
+% display the corresponding histograms of diagonal line lengths.
 
-
-%% 2) compute RPs and diagonal line length histograms of border correction schemes
-
-% loop over the two different regimes
-for i = 1:2
-    
+% loop over the two different regimes (regular and chaotic)
+for i = 1:2  
     % compute normal RPs for the Logistic map
     [RP1{1,i},~,~] = rp(Y1{i},e1(i),thres_sel_1,norm); 
     
@@ -238,8 +240,7 @@ for i = 1:2
     hl1{5,i} = hll(1,:)';
     [~, hll2] = dl_windowmasking(X2); % window masking
     hl2{5,i} = hll2(1,:)';
-     
-    
+       
     % loop over the different border effect correction approaches and make
     % a proper histogram
     for l = 1:5       
@@ -247,8 +248,7 @@ for i = 1:2
         pl1{l,i} = hist(hl1{l,i},1:size(RP1{1,i},1)); 
         pl2{l,i} = hist(hl2{l,i},1:size(RP2{1,i},1)); 
     end
-    
-    
+        
     % create string array for storing title names of the subplot, which we
     % will plot for all the correction schemes
     titlestr = {'conventional','dibo','Censi','kelo','window masking'};
@@ -285,6 +285,7 @@ for i = 1:2
         else
             xlim([0 N/40])            
         end
+        grid on
     end
     
     % Plot results for the Roessler system
@@ -319,25 +320,25 @@ for i = 1:2
         else
             xlim([0 N/10])            
         end
+        grid on
     
     end
     
     
 end
-
-
-%% 3) tangential motion correction schemes
-
-% set parameters for correction schemes
+%% 3) Tangential motion correction schemes
+% For all tangential motion corrections schemes, but our proposed diagonal RP 
+% skeletonization method, we have to set the according parameters:
 
 % perpendicular RP: angle threshold
-w = 0.258;
+w = 0.258; % this is in rad units and corresponds to roughly 15°
 
 % isodirectional RP: translation parameter T
 % (corresponds roughly to the first minimum of the auto mutual information
 % for the chaotic and regular Roessler setup as well as for the chaotic 
 % Logistic map setup)
 T = 7;
+
 % isodirectional RP: choice of second recurrence threshold. Give this as a
 % percentage of the first recurrence threshold, i.e. if set to 0.8, the
 % second threshold will be e2 = 0.8 * e1
@@ -354,12 +355,10 @@ TRP_threshold = 7;
 % for the chaotic and regular Roessler setup as well as for the chaotic 
 % Logistic map setup)
 LM2P_threshold = 7;
-
 %% 3.1) Compute and display RPs from the tangential motion correction schemes
 
 % loop over the two different regimes
-for i = 1:2
-    
+for i = 1:2    
     % apply correction schemes for tangential motion
    
     % Logistic map data
@@ -427,10 +426,8 @@ for i = 1:2
     end
       
 end
-    
-
 %% 3.2) Compute and display entropy from the tangential motion correction schemes
-    
+
 % loop over the two different regimes
 for i = 1:2
     
@@ -538,23 +535,21 @@ for i = 1:2
     
     
 end
- 
-    
-
 %% Helper functions
 
 function [t2,x2] = Rossler(varargin)
 % This function numerically integrates the Roessler-System with input
-% paramters a, b and c starting with input inital condition 
+% paramters 'a', 'b' and 'c' starting with input inital condition 
 % x0 = [x(t0); y(t0); z(t0)]. 
 %
-% [t,x] = Rossler(a,b,c,x0,N,transients)
+% [t,x] = Rossler(a,b,c,x0,N,transients,delta_t)
 %
 % t is the time vector containing just the times, where the samping took
-% place. The corresponding values to these t2-times are stored in x.
+% place (sampling time input 'delta_t'). The corresponding values to these 
+% times are stored in x.
 %
-% Here the sampling rate is 0.2 and the output is a vector-series of 
-% length N (input parameter) with 'transients' removed samples.
+% The output is a vector-series of length 'N' (input parameter) with 'transients'
+% removed samples.
 
 
 % bind input
@@ -564,10 +559,7 @@ c = varargin{3};
 x0= varargin{4};
 N = varargin{5};
 transients = varargin{6};
-
-
-% Define your sampling time
-time_sample = 0.2;
+time_sample = varargin{7};
 
 time_interval = (N+transients)* time_sample;     % k+1 is the number of columns in the solution matrix M
 
@@ -585,5 +577,3 @@ x2 = x2(:,transients+1:end-1);
 t2 = t2(1:end-transients-1);
 
 end
-
-    
