@@ -161,6 +161,8 @@ for i = 1:2
 
     subplot(2,3,1)
     imagesc(t(i,400:600),t(i,400:600),RP1{1,i}(400:600,400:600)), colormap([1 1 1; 0 0 0]), axis xy square
+    xlabel('Time')
+    ylabel('Time')
     if i == 1
         title('RP of Roessler system (regular)')
     else
@@ -246,7 +248,7 @@ for i = 1:2
     for j = 1:6
         
         subplot(2,3,j)
-        imagesc(RP1{j,i}), colormap([1 1 1; 0 0 0]), axis xy square
+        imagesc(t(i,400:600),t(i,400:600),RP1{j,i}(400:600,400:600)), colormap([1 1 1; 0 0 0]), axis xy square
         if i == 1
             titlestring = strcat(methods{j},'{ }','RP (Roessler system regular)');
             title(titlestring)
@@ -254,8 +256,8 @@ for i = 1:2
             titlestring = strcat(methods{j},'{ }','RP (Roessler system chaotic)');
             title(titlestring)
         end
-        xlabel('datapoint index')
-        ylabel('datapoint index')
+        xlabel('Time')
+        ylabel('Time')
         set(gca,'LineWidth',2)
         set(gca,'FontSize',14)     
     end

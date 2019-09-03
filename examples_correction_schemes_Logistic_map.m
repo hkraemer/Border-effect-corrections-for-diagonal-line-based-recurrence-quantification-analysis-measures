@@ -17,7 +17,7 @@ clear, clc
 % Set length of the time series output and the number of data points, which 
 % will be removed due to transient behavior.
 
-N = 2000; 
+N = 1000; 
 transients = 2500;
 %% 
 % Select the threshold selection method and the recurrence threshold $\epsilon$:
@@ -27,6 +27,17 @@ transients = 2500;
 % the data will be generated).
 
 thres_sel_1 = 'fix';
+%% 
+% To mimic a more realistic case, we can also add white noise to the data. Select 
+% the noise level (times the mean standard deviation of the multivariate signal). 
+% Note that, in contrast to the flow-data case in the script |examples_correction_schemes_Roessler_system.mlx|, 
+% the tangential motion correction schemes do not play any role, since there is 
+% no tangential motion in map data. Thus, the noise corruption will heavily effect 
+% the eventual diagonal line length entropy estimates.
+
+% sigma = 0; % 0% of the mean std of the signal, i.e. no noise contamination
+sigma = 0.01; % 1% of the mean std of the signal
+% sigma = 0.05; % 5% of the mean std of the signal
 %% 
 % Select the metric for distance computations and choose from Euclidean or maximum 
 % norm.
@@ -91,6 +102,9 @@ tau = 1;
 % generate embedding vectors
 Y1{1}= embed(x(1,:),m,tau);
 Y1{2}= embed(x(2,:),m,tau);
+
+Y1{1} = Y1{1} + sigma*mean(std(Y1{1}))*randn(size(Y1{1}));
+Y1{2} = Y1{2} + sigma*mean(std(Y1{2}))*randn(size(Y1{2}));
 %% 
 % Plot Phase Space for the Logistic map example
 
