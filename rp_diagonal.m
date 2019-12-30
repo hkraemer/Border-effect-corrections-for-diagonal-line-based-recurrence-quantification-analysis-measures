@@ -261,7 +261,8 @@ end
 if symm
     % revert this close returns map into a legal RP
     XX = revertRP(X_cl_new);    
-    X_new = XX + (XX-eye(size(XX)))';
+    X_new = XX + XX';
+    X_new(logical(eye(size(X_new)))) = diag(X);
 else 
     % fill up close returns map with lines stored in the new line matrix
     for i = 1:size(line_matrix_final2,2)
@@ -275,7 +276,8 @@ else
     % revert this close returns map into a legal RP
     XX = revertRP(X_cl_new);
     XXX= revertRP(X_cl2_new);
-    X_new = XX + (XXX-eye(size(XXX)))';
+    X_new = XX + (XXX)';
+    X_new(logical(eye(size(X_new)))) = diag(X);
     
 end
 
@@ -589,66 +591,6 @@ function RP = delete_line_from_RP(RP,l_vec)
 %    X = RP;
 end
 
-
-% function [XX,YY]= scan_lines(X,l_vec,line,column)
-%     
-%     % for the input index tuple look for the start indices
-%     index = 0;
-%     while true        
-%         % check whether the input index tuple is a listed index for starting
-%         % points of line lengths in the line matrix 
-%         loc_line = find(line==l_vec(2,:));
-%         del_ind = loc_line(column+index==l_vec(3,loc_line));
-%         
-%         if del_ind
-%             break
-%         else
-%             index = index - 1;
-%         end
-%     end   
-%     
-%     % delete the line from RP
-%     XX = delete_line_from_RP(X,l_vec(:,del_ind));
-%     
-%     % bind line length, line & column starting index
-%     len = l_vec(1,del_ind);
-%     li = l_vec(2,del_ind);
-%     co = l_vec(3,del_ind);
-%     
-%     % delete the line from the line matix
-%     l_vec(:,del_ind) = [];
-%     
-%     [N,~] = size(XX);
-%     
-%     %%%%%% check for borders of the RP %%%%%%
-%     if li-1 < 1
-%         flag1 = false;
-%     else
-%         flag1 = true;
-%     end
-%     if li+1 > N
-%         flag2 = false;
-%     else
-%         flag2 = true;
-%     end
-%     
-%     for i = 1:len
-%     
-%         % check above the line for a neighbour
-%         if flag1 && XX(li-1,co+i-1)
-%             % call function itself
-%             [XX,l_vec] = scan_lines(XX,l_vec,li-1,co+i-1);
-%             
-%         % check underneeth the line for a neighbour    
-%         elseif flag2 && XX(li+1,co+i-1)
-%             % call function itself
-%             [XX,l_vec] = scan_lines(XX,l_vec,li+1,co+i-1);
-%         end
-%     end
-%     
-%     YY = l_vec;
-% 
-% end
 
 function [XX,YY]= scan_lines(XX,l_vec,line,column)
     
