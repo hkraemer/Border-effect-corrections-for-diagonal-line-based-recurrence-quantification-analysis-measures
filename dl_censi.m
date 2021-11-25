@@ -10,13 +10,21 @@ function [a_out, b_out]=dl_censi(varargin)
 %    line structures in a recurrence plot X using the mentionded correction. 
 %    Not only lines starting AND ending at a border of the RP, but also semi
 %    border lines - lines, that start OR end at a border of the RP - are 
-%    denoted as border lines. The longest of these count.
+%    denoted as border lines. The longest of these count. Default is
+%    'normal' to only count "full" borderlines.
 %
 %    [A B]=dl_censi(X,'semi') computes the mean A and the lengths of the
 %    found diagonal lines of the recurrence plot X, stored in B, using the 
 %    correction mentioned above and also accounts for semi-border diagonals.
 %    In order to get the histogramme of the line lengths, simply call 
 %    HIST(B,[1 MAX(B)]).
+%
+%    [A B]=dl_censi(X,'semi','longest') computes the mean A and the lengths 
+%    of the found diagonal lines of the recurrence plot X, stored in B, using the 
+%    correction mentioned above and also accounts for semi-border diagonals.
+%    Third optional argument 'longest' determines the way borderlines get
+%    replaced. 'normal' (default) replaces each borderline with the LOI,
+%    'longest' replaces each borderline with the longest line found in X.
 %
 %    Examples (CRP toolbox needs to be installed):
 %       x = sin(linspace(0,5*2*pi,1050));
@@ -55,11 +63,22 @@ styleLib={'normal','semi'}; % the possible borderline-style to look for
 try
     type = varargin{2};
     if ~isa(type,'char') || ~ismember(type,styleLib)
-        warning(['Specified RP type should be one of the following possible values:',...
+        warning(['Specified borderline type should be one of the following possible values:',...
            10,sprintf('''%s'' ',styleLib{:})])
     end
 catch
     type = 'normal';
+end
+
+replaceLib={'LOI','longest'}; % the possible borderline-replacements
+try
+    rep_type = varargin{3};
+    if ~isa(rep_type,'char') || ~ismember(rep_type,replaceLib)
+        warning(['Specified borderline replacement type should be one of the following possible values:',...
+           10,sprintf('''%s'' ',replaceLib{:})])
+    end
+catch
+    rep_type = 'LOI';
 end
 
 [Y,~] = size(X);
@@ -76,8 +95,12 @@ if issymmetric(X)
     % remove lines of length zero (=no line)
     zero_lines = borderlines(:)==0;
     borderlines(zero_lines) = [];
-    % set all borderlines to the LOI
-    borderlines(:)=Y;
+    % set all borderlines to the specified replacement:
+    if strcmp(rep_type,'LOI')
+        borderlines(:)=Y;
+    elseif strcmp(rep_type,'longest')
+        borderlines(:)=max(borderlines);
+    end
     % append borderlines (but exclude LOI)
     lines = horzcat(lines,borderlines);
 else
@@ -90,8 +113,12 @@ else
     % remove lines of length zero (=no line)
     zero_lines = borderlines(:)==0;
     borderlines(zero_lines) = [];
-    % set all borderlines to the longest one 
-    borderlines(:)=Y;
+    % set all borderlines to the specified replacement:
+    if strcmp(rep_type,'LOI')
+        borderlines(:)=Y;
+    elseif strcmp(rep_type,'longest')
+        borderlines(:)=max(borderlines);
+    end
     % add borderlines to lines
     lines = horzcat(lines,borderlines);
 end
