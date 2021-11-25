@@ -89,8 +89,9 @@ if issymmetric(X)
         lines = horzcat(lines,ll);
         borderlines = horzcat(borderlines,bl);
     end
-    % append lines for second triangle and LOI   
-    lines = horzcat(lines,lines,Y);
+    % append lines for second triangle and LOI
+    [~,bl] = getLinesOnDiag(X,0,type);
+    lines = horzcat(lines,lines,bl);
     borderlines = horzcat(borderlines,borderlines);
     % remove lines of length zero (=no line)
     zero_lines = borderlines(:)==0;
